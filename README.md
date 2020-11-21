@@ -25,3 +25,5 @@ The goal of this project is to create a very basic base with witch to start othe
   - should be able to set stats, save it, and load a saved file.
 - create basic GUI for displaying stats.
 - parallax bg and a demo area for it.
+
+## Testing Bob editing the README
