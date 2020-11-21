@@ -1,0 +1,21 @@
+{
+	"folders":
+	[
+		{
+			"file_exclude_patterns":
+			[
+				"*.dll",
+				"*.meta"
+			],
+			"path": "Assets\\Scripts"
+		},
+		{
+			"file_exclude_patterns":
+			[
+				"*.dll",
+				"*.meta"
+			],
+			"path": "Assets\\Editor"
+		},
+	]
+}
