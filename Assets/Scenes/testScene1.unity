@@ -741,7 +741,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c0d2c479d68889d49a30006afa0b8143, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  playerGrappleHook: {fileID: 0}
+  playerGrappleHook: {fileID: 8819463436351336125, guid: c938aba31f48bfd45b9b61b7d7d25641,
+    type: 3}
 --- !u!1 &2087695045
 GameObject:
   m_ObjectHideFlags: 0
