@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿// old pler handler code from a previous project called "WeeLaddyPlatformer"
+
+using UnityEngine;
 
 [RequireComponent(typeof(Controller2D))]
 public class Player : MonoBehaviour
