@@ -10,13 +10,14 @@ public class PlayerHandler : MonoBehaviour
     HingeJoint2D playerHanger;  //Tether that we create and destroy depending on player input
     GameObject grappleVariable;
 
+
     public GameObject playerGrappleHook;
 
     // Start is called before the first frame update
     void Start()
     {
         playerRigidBody = GetComponent<Rigidbody2D>();
-        Instantiate(playerGrappleHook, new Vector3(0, 0, 0), Quaternion.identity);//, desiredAnchorWorld, Quaternion.identity);
+        //Instantiate(playerGrappleHook, new Vector3(0, 0, 0), Quaternion.identity);//, desiredAnchorWorld, Quaternion.identity);
     }
 
     // Update is called once per frame
@@ -58,7 +59,7 @@ public class PlayerHandler : MonoBehaviour
 
             //For creating a sprite for the hook.  Rope between hook and player will come later
             //Should look into doing this as a "prefab", but for now, piecemeal
-            //grappleVariable = Instantiate(playerGrappleHook, desiredAnchorWorld, Quaternion.identity);
+            grappleVariable = Instantiate(playerGrappleHook, desiredAnchorWorld, Quaternion.identity);
             //Instantiate(playerGrappleHook, desiredAnchorWorld, Quaternion.identity);
 
 
@@ -68,7 +69,7 @@ public class PlayerHandler : MonoBehaviour
         {
             //Destory HingeJoint2D component on player
             Destroy(playerHanger);
-            //Destroy(grappleVariable);
+            Destroy(grappleVariable);
             //Destroy(playerGrappleHook);
             isHanging = false;
         }
