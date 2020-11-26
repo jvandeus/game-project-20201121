@@ -1,29 +1,28 @@
 # Outline:
-The goal of this project is to create a very basic base with witch to start other projects. Ideally All the assests will be bland placeholder assets that can be swapped out with whatever creative vision a newer project may see fit. As much as possible, this project should get most work that is NOT asset creation out of way to make it easier to get a collaborative metroidvania-esc project off the ground for when artists get involved.
+The goal of this project is just a personal effort for us to make something as a hobby. The idea to make a platformer-type game with no floors. Instead we will explore other fun movement methods, like swinging.
 
 ## Phase 1 Features&Goals
 ### Currently in Development
-- Basic tileset system with placeholder visuals in a grid-based format for easy mechanics testing.
-- Single player object with scripts for side-scroller movement.
+- All placeholder visuals. The style and techinical methods are all tbd for now.
+- Single player object with scripts for swinging around a basic floor-less environment.
 - Basic player movement abilities that all can be enabled/disabled.
-	- Jump
-	- Wall jump
-	- Wall slide
+    - swinging on ceilings via some kind of grapple.
+	- Jump (off of grapple)
 	- Additional X number of mid-air Jumps
-- Basic Player attacks with placeholder animations.
 
 ## Phase 2 Features&Goals
 ### Currently in Development
-- Basic stat system, with at least HP that can be applied to players and enemies.
-- Enemies with basic paths.
-- Player is able to damage enemies.
-- Enemy with basic attacks that can damage the player.
+- Explore other player movement options
+    - grapple to "zones" or areas of the screen, where the background would indicate its a grabable surface
+- Momentum based attacks, more heavier and faster swinging around means more effective attacks, either for breaking environment or enemies.
+
+## Phase 3 Features&Goals
+### Currently in Development
+- Explore other player movement options
+    - Wall jump
+    - Wall slide
+- possibly have differnt transformations or modes the player can use, like a "spike" mode that will stick to objects on impact, or a weapon to do more damage and maybe increase momentum.
 
 ## Other Features&Goals
 ### After all other phases are complete, one or more of the following could be the next development focus.
 - game saving and loading system.
-  - should be able to set stats, save it, and load a saved file.
-- create basic GUI for displaying stats.
-- parallax bg and a demo area for it.
-
-## Testing Bob editing the README
