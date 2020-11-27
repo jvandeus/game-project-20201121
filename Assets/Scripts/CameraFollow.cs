@@ -6,7 +6,7 @@ public class CameraFollow : MonoBehaviour
 {
 
     public Camera thisCamera;
-    public Controller2D target;
+    public CharacterController2D target;
     private Collider2D thisCollider;
     public float verticalOffset;
     public Vector2 focusAreaSize;

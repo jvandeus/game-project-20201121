@@ -2,6 +2,7 @@
 using UnityEngine;
 using UnityEngine.Events;
 
+[RequireComponent(typeof(Collider2D))]
 [RequireComponent(typeof(Rigidbody2D))]
 public class CharacterController2D : MonoBehaviour
 {
@@ -36,6 +37,10 @@ public class CharacterController2D : MonoBehaviour
 	private void Awake()
 	{
 		m_Rigidbody2D = GetComponent<Rigidbody2D>();
+		if (!characterHanger ) {
+			characterHanger = gameObject.AddComponent(typeof(HingeJoint2D)) as HingeJoint2D;
+			characterHanger.enabled = false;
+		}
 
 		if (OnLandEvent == null)
 			OnLandEvent = new UnityEvent();
@@ -89,11 +94,13 @@ public class CharacterController2D : MonoBehaviour
 				if (!m_wasHanging) {
 					m_wasHanging = true;
 					OnHangEvent.Invoke(true);
+					HangStart();
 				}
 			} else {
 				if (m_wasHanging) {
 					m_wasHanging = false;
 					OnHangEvent.Invoke(false);
+					HangEnd();
 				}
 			}
 
@@ -126,25 +133,24 @@ public class CharacterController2D : MonoBehaviour
 
 	public void HangStart()
 	{
-		//For creating the hingejoint component on player.
-        playerHanger = gameObject.AddComponent(typeof(HingeJoint2D)) as HingeJoint2D;
+		characterHanger.enabled = true;
         float anchorR = 2; //length of hingeJoint arm
         //For straight up, we just need to add anchorR to the y coordinate of player position (world)
         Vector3 playerPos = transform.position; //World coordinates.  Transform.localPosition gives position in parent transform coordinates.
         Vector3 desiredAnchorWorld = new Vector3(playerPos[0], playerPos[1] + anchorR, playerPos[2]); //Is there a way to do this without new? or without the temporary variable?
         Vector3 desiredAnchorLocal = transform.InverseTransformPoint(desiredAnchorWorld); //transform from world to local
-        playerHanger.anchor = new Vector2(desiredAnchorLocal[0], desiredAnchorLocal[1]); //hingeJoint2D's anchor only wants Vector2
-        playerHanger.enableCollision = true;  //False by default?  Preposterous. 
+        characterHanger.anchor = new Vector2(desiredAnchorLocal[0], desiredAnchorLocal[1]); //hingeJoint2D's anchor only wants Vector2
+        characterHanger.enableCollision = true;  //False by default?  Preposterous. 
 
         //For creating a sprite for the hook.  Rope between hook and player will come later
         //Should look into doing this as a "prefab", but for now, piecemeal
-        grappleVariable = Instantiate(playerGrappleHook, desiredAnchorWorld, Quaternion.identity);
+        currentGrapple = Instantiate(characterGrappleHook, desiredAnchorWorld, Quaternion.identity);
 	}
 
 	public void HangEnd()
 	{
-		// Destory HingeJoint2D component on player
-		Destroy(characterHanger);
+		// Disable HingeJoint2D component on player
+		characterHanger.enabled = false;
 		// Destory The Prefab to the grapple sprite
         Destroy(currentGrapple);
 	}
