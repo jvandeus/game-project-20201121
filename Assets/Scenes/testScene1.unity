@@ -804,7 +804,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 760130b5e50104142bed0752da3790f0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  controller: {fileID: 0}
   moveSpeed: 40
   directionalInput: {x: 0, y: 0}
 --- !u!114 &1806914272
@@ -833,7 +832,8 @@ MonoBehaviour:
   OnHangEvent:
     m_PersistentCalls:
       m_Calls: []
-  characterGrappleHook: {fileID: 0}
+  characterGrappleHook: {fileID: 8819463436351336125, guid: c938aba31f48bfd45b9b61b7d7d25641,
+    type: 3}
 --- !u!1 &2087695045
 GameObject:
   m_ObjectHideFlags: 0
