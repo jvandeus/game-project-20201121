@@ -6,18 +6,24 @@ using UnityEngine;
 [RequireComponent(typeof(CharacterController2D))]
 public class PlayerInput: MonoBehaviour {
 
-    public CharacterController2D controller;
+    private CharacterController2D controller;
 
     public float moveSpeed = 40f;
+    public Vector2 directionalInput = Vector2.zero;
 
-    float horizontalMove = 0f;
+    // float horizontalMove = 0f;
     bool jump = false;
     bool hang = false;
 
+    // Start is called before the first frame update
+    void Start()
+    {
+        controller = GetComponent<CharacterController2D>();
+    }
     
     // Update is called once per frame
     void Update () {
-        Vector2 directionalInput = new Vector2(Input.GetAxisRaw("Horizontal") * moveSpeed, Input.GetAxisRaw("Vertical"));
+        directionalInput = new Vector2(Input.GetAxisRaw("Horizontal") * moveSpeed, Input.GetAxisRaw("Vertical"));
 
         // only care about the button press
         if (Input.GetButtonDown("Jump")) {
