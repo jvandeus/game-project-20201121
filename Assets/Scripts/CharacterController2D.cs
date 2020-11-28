@@ -34,6 +34,8 @@ public class CharacterController2D : MonoBehaviour
 	private GameObject currentGrapple;
 	public GameObject characterGrappleHook;
 
+	public float anchorR;
+
 	private void Awake()
 	{
 		m_Rigidbody2D = GetComponent<Rigidbody2D>();
@@ -137,7 +139,7 @@ public class CharacterController2D : MonoBehaviour
 	public void HangStart()
 	{
 		characterHanger.enabled = true;
-        float anchorR = 2; //length of hingeJoint arm
+        //float anchorR = 2; //length of hingeJoint arm
         //For straight up, we just need to add anchorR to the y coordinate of player position (world)
         Vector3 playerPos = transform.position; //World coordinates.  Transform.localPosition gives position in parent transform coordinates.
         Vector3 desiredAnchorWorld = new Vector3(playerPos[0], playerPos[1] + anchorR, playerPos[2]); //Is there a way to do this without new? or without the temporary variable?
