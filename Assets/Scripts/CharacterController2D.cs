@@ -108,9 +108,9 @@ public class CharacterController2D : MonoBehaviour
 			//Vector3 targetVelocity = new Vector2(move.x * 10f, m_Rigidbody2D.velocity.y);
 			// And then smoothing it out and applying it to the character
 			// m_Rigidbody2D.velocity = Vector3.SmoothDamp(m_Rigidbody2D.velocity, targetVelocity, ref m_Velocity, m_MovementSmoothing);
-			
+
 			// move the character with physics forces
-			m_Rigidbody2D.AddForce(move, ForceMode2D.Impulse);
+			m_Rigidbody2D.AddForce(move); //, ForceMode2D.Impulse);
 
 			// // If the input is moving the player right and the player is facing left...
 			// if (move.x > 0 && !m_FacingRight)
@@ -157,4 +157,9 @@ public class CharacterController2D : MonoBehaviour
 		// Destory The Prefab to the grapple sprite
         Destroy(currentGrapple);
 	}
+
+
+	//Testing a new direction for the hanger
+
+
 }
