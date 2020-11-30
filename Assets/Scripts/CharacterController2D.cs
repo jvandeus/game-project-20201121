@@ -42,6 +42,10 @@ public class CharacterController2D : MonoBehaviour
 	private GameObject currentGrapple;
 	public GameObject characterGrappleHook;
 
+	public float anchorR; // Length of hingeJoint2D / Rope.  Set in inspector in Unity
+   
+    /// </summary>
+
 	private void Awake()
 	{
 		m_Rigidbody2D = GetComponent<Rigidbody2D>();
