@@ -21,14 +21,12 @@ public class PlayerInput: MonoBehaviour {
     void Start()
     {
         controller = GetComponent<CharacterController2D>();
-        //horiMoveForce = 10;
     }
     
     // Update is called once per frame
     void Update () {
-        //directionalInput = new Vector2(Input.GetAxisRaw("Horizontal") * moveSpeed, Input.GetAxisRaw("Vertical"));
-        directionalInput = new Vector2(Input.GetAxisRaw("Horizontal") * horiMoveForce, Input.GetAxisRaw("Vertical"));
-        //directionalInput = new Vector2(Input.GetAxisRaw("Horizontal") * 10, Input.GetAxisRaw("Vertical"));
+        // just multiply by 10 to get a decent force instead of having to set force to like 400 or so.
+        directionalInput = new Vector2(Input.GetAxisRaw("Horizontal") * horiMoveForce * 10f, Input.GetAxisRaw("Vertical"));
 
         // only care about the button press
         if (Input.GetButtonDown("Jump")) {
@@ -46,9 +44,8 @@ public class PlayerInput: MonoBehaviour {
 
     void FixedUpdate ()
     {
-        // Move our character
-        //controller.Move(directionalInput * Time.fixedDeltaTime, jump, hang);
-        controller.Move(directionalInput, jump, hang); //Force should not be multiplied by time
+        // Move our character, multiplied by the time differnt between frames, so movement is the same regardles off your computer's fps.
+        controller.Move(directionalInput * Time.fixedDeltaTime, jump, hang);
         // reset the jump
         jump = false;
     }
