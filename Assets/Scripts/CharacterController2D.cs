@@ -1,4 +1,6 @@
 // created from brackeys tutorial code, modified with other code in mind. https://www.youtube.com/watch?v=dwcT-Dch0bA
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -10,8 +12,13 @@ public class CharacterController2D : MonoBehaviour
 	[Range(0, .3f)] [SerializeField] private float m_MovementSmoothing = .05f;	// How much to smooth out the movement
 	[SerializeField] private bool m_AirControl = false;							// Whether or not a player can steer while jumping;
 	[SerializeField] private LayerMask m_WhatIsGround;							// A mask determining what is ground to the character
+	[SerializeField] private LayerMask m_WhatCanBeGrappled;					    // A mask determining what can be grabbed by the character
+	[SerializeField] public float m_maxGrappleDistance;							// Max distance the grapple can reach
 	[SerializeField] private Transform m_GroundCheck;							// A position marking where to check if the player is grounded.
 	[SerializeField] private Transform m_CeilingCheck;							// A position marking where to check for ceilings
+
+	// just for temporary visuals
+	public LineRenderer grappleLine;
 
 	const float k_GroundedRadius = .2f; // Radius of the overlap circle to determine if grounded
 	private bool m_Grounded;            // Whether or not the player is grounded.
@@ -30,25 +37,32 @@ public class CharacterController2D : MonoBehaviour
 
 	private HingeJoint2D characterHanger;  //Tether that we create and destroy depending on input
 	public BoolEvent OnHangEvent;
-	private bool m_wasHanging = false;
+	// private bool m_isHanging = false; // idk if we need this?
+	private bool m_wasHangHeld = false;
 	private GameObject currentGrapple;
 	public GameObject characterGrappleHook;
-
-	public float anchorR;
 
 	private void Awake()
 	{
 		m_Rigidbody2D = GetComponent<Rigidbody2D>();
+		// try to grab it from components on this object.
+		if (!characterHanger) {
+			characterHanger = GetComponent<HingeJoint2D>();
+		}
+		// otherwise slap a new one on.
 		if (!characterHanger ) {
 			characterHanger = gameObject.AddComponent(typeof(HingeJoint2D)) as HingeJoint2D;
 			characterHanger.enabled = false;
 		}
+		characterHanger.enableCollision = true;  //False by default?  Preposterous. 
 
 		if (OnLandEvent == null)
 			OnLandEvent = new UnityEvent();
 
 		if (OnHangEvent == null)
 			OnHangEvent = new BoolEvent();
+
+		grappleLine.enabled = false;
 	}
 
 	private void FixedUpdate()
@@ -82,7 +96,7 @@ public class CharacterController2D : MonoBehaviour
 		transform.localScale = theScale;
 	}
 
-	public void Move(Vector2 move, bool jump, bool hang)
+	public void Move(Vector2 move, Vector2 cursorPosition, bool jump, bool hang)
 	{
 		// Check if the character is touching a ceiling
 		// NOTE: not using this yet, just keeping it here for notes.
@@ -93,16 +107,14 @@ public class CharacterController2D : MonoBehaviour
 		{
 			// Update the hanging states and event based on the input.
 			if (hang) {
-				if (!m_wasHanging) {
-					m_wasHanging = true;
-					OnHangEvent.Invoke(true);
-					HangStart();
+				if (!m_wasHangHeld) {
+					m_wasHangHeld = true;
+					StartCoroutine(grappleToPoint(cursorPosition));
 				}
 			} else {
-				if (m_wasHanging) {
-					m_wasHanging = false;
-					OnHangEvent.Invoke(false);
-					HangEnd();
+				if (m_wasHangHeld) {
+					m_wasHangHeld = false;
+					// no need to end hang function, the coroutine will do that, looking at the "wasHanging" state
 				}
 			}
 
@@ -136,32 +148,79 @@ public class CharacterController2D : MonoBehaviour
 		}
 	}
 
-	public void HangStart()
+	private void HangStart(Vector2 targetWorldPoint)
 	{
+		// Enable HingeJoint2D component on player
 		characterHanger.enabled = true;
-        //float anchorR = 2; //length of hingeJoint arm
-        //For straight up, we just need to add anchorR to the y coordinate of player position (world)
-        Vector3 playerPos = transform.position; //World coordinates.  Transform.localPosition gives position in parent transform coordinates.
-        Vector3 desiredAnchorWorld = new Vector3(playerPos[0], playerPos[1] + anchorR, playerPos[2]); //Is there a way to do this without new? or without the temporary variable?
-        Vector3 desiredAnchorLocal = transform.InverseTransformPoint(desiredAnchorWorld); //transform from world to local
-        characterHanger.anchor = new Vector2(desiredAnchorLocal[0], desiredAnchorLocal[1]); //hingeJoint2D's anchor only wants Vector2
-        characterHanger.enableCollision = true;  //False by default?  Preposterous. 
+		// trigger the event
+        OnHangEvent.Invoke(true);
+
+		// vector 3 just gets implicitly converted to vector 2 here, so it will comply with the anchor fine.
+        Vector2 desiredAnchorLocal = transform.InverseTransformPoint(targetWorldPoint); //transform from world to local
+        characterHanger.anchor = desiredAnchorLocal;
 
         //For creating a sprite for the hook.  Rope between hook and player will come later
-        //Should look into doing this as a "prefab", but for now, piecemeal
-        currentGrapple = Instantiate(characterGrappleHook, desiredAnchorWorld, Quaternion.identity);
+        currentGrapple = Instantiate(characterGrappleHook, targetWorldPoint, Quaternion.identity);
 	}
 
-	public void HangEnd()
+	private void HangEnd()
 	{
 		// Disable HingeJoint2D component on player
 		characterHanger.enabled = false;
+		// end the event
+		OnHangEvent.Invoke(false);
 		// Destory The Prefab to the grapple sprite
-        Destroy(currentGrapple);
+		if (currentGrapple) {
+	        Destroy(currentGrapple);
+	    }
 	}
 
 
-	//Testing a new direction for the hanger
+	// using coroutines (to avoid a lot of update calls), attempt to grapple to the given point.
+    IEnumerator grappleToPoint (Vector2 target)
+    {
+    	// cast a ray from player position to the target
+    	Vector2 rayDirection = target - (Vector2)transform.position;
+    	Vector2 lineEnd;
+    	bool is_valid;
+    	float timer = 0f;
+    	float timeOut = 0.5f; // for when the grapple misses, only show the line for a short time
 
+    	// Just trying to see the direction im trowing the raycast in...
+    	Debug.DrawRay(transform.position, rayDirection, Color.green, 0);
 
+    	RaycastHit2D hitInfo = Physics2D.Raycast(transform.position, rayDirection, m_maxGrappleDistance, m_WhatCanBeGrappled);
+
+    	// if we have a hit...
+    	if (hitInfo.collider != null) {
+    		is_valid = true;
+    		// set the line end to the point
+    		lineEnd = hitInfo.point;
+			// start the hang
+			HangStart(hitInfo.point);
+		} else {
+			is_valid = false;
+			// no hit, set the line render to connect to the target, or the max distance it CAN traval.
+			lineEnd = transform.position + Vector3.ClampMagnitude(rayDirection, m_maxGrappleDistance);
+		}
+		grappleLine.enabled = true;
+
+		// while the grapple holds, show the line
+        while(m_wasHangHeld && timer < timeOut) {
+        	// if the grapple was a miss...
+        	if (!is_valid) {
+	        	// increment the timer
+	        	timer += Time.deltaTime;
+	        }
+        	// update the line renderer
+        	grappleLine.SetPosition(0, transform.position);
+			grappleLine.SetPosition(1, lineEnd);
+			// wait for next frame
+            yield return null;
+        }
+        // disable the line renderer
+        grappleLine.enabled = false;
+        // end the grapple and finish this coroutine
+        HangEnd();
+    }
 }

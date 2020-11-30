@@ -11,7 +11,9 @@ public class PlayerInput: MonoBehaviour {
     //public float moveSpeed = 40f;
     //Since we're adding a force, we don't set a movespeed, we set a force
     public float horiMoveForce;
-    public Vector2 directionalInput = Vector2.zero;
+    private Vector2 directionalInput = Vector2.zero;
+    private Vector2 cursorPosition = Vector2.zero;
+    public Camera playerCamera;
 
     // float horizontalMove = 0f;
     bool jump = false;
@@ -28,6 +30,9 @@ public class PlayerInput: MonoBehaviour {
         // just multiply by 10 to get a decent force instead of having to set force to like 400 or so.
         directionalInput = new Vector2(Input.GetAxisRaw("Horizontal") * horiMoveForce * 10f, Input.GetAxisRaw("Vertical"));
 
+        // cursor from mose position for now. later maybe add controller option.
+        cursorPosition = playerCamera.ScreenToWorldPoint(Input.mousePosition);
+
         // only care about the button press
         if (Input.GetButtonDown("Jump")) {
             jump = true;
@@ -39,13 +44,12 @@ public class PlayerInput: MonoBehaviour {
         } else if (Input.GetButtonUp("Fire1")) {
             hang = false;
         }
-
     }
 
     void FixedUpdate ()
     {
         // Move our character, multiplied by the time differnt between frames, so movement is the same regardles off your computer's fps.
-        controller.Move(directionalInput * Time.fixedDeltaTime, jump, hang);
+        controller.Move(directionalInput * Time.fixedDeltaTime, cursorPosition, jump, hang);
         // reset the jump
         jump = false;
     }
