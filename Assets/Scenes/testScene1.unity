@@ -219,13 +219,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 48011f3365e62744bbf8b767e076658a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  thisCamera: {fileID: 0}
   target: {fileID: 1806914272}
   verticalOffset: 0
-  focusAreaSize: {x: 0, y: 0}
+  focusAreaSize: {x: 10, y: 10}
   focusShiftDeadzone: 0.5
   focusShiftAnchor: 0.4
-  focusShiftIntensity: 1
+  focusShiftIntensity: 0.5
   BackgroundSpeed: 0
 --- !u!1 &477530253
 GameObject:

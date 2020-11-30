@@ -5,7 +5,7 @@ using System.Collections;
 public class CameraFollow : MonoBehaviour
 {
 
-    public Camera thisCamera;
+    private Camera thisCamera;
     public CharacterController2D target;
     private Collider2D thisCollider;
     public float verticalOffset;
