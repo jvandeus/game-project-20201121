@@ -1,34 +1,56 @@
-﻿using UnityEngine;
+﻿// created from brackeys tutorial code, modified with other code in mind. https://www.youtube.com/watch?v=dwcT-Dch0bA
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
 
-[RequireComponent(typeof(Player))]
-public class PlayerInput : MonoBehaviour
-{
-    Player player;
+[RequireComponent(typeof(CharacterController2D))]
+public class PlayerInput: MonoBehaviour {
 
+    private CharacterController2D controller;
+
+    //public float moveSpeed = 40f;
+    //Since we're adding a force, we don't set a movespeed, we set a force
+    public float horiMoveForce;
+    private Vector2 directionalInput = Vector2.zero;
+    private Vector2 cursorPosition = Vector2.zero;
+    public Camera playerCamera;
+
+    // float horizontalMove = 0f;
+    bool jump = false;
+    bool hang = false;
+
+    // Start is called before the first frame update
     void Start()
     {
-        player = GetComponent<Player>();
+        controller = GetComponent<CharacterController2D>();
+    }
+    
+    // Update is called once per frame
+    void Update () {
+        // just multiply by 10 to get a decent force instead of having to set force to like 400 or so.
+        directionalInput = new Vector2(Input.GetAxisRaw("Horizontal") * horiMoveForce * 10f, Input.GetAxisRaw("Vertical"));
+
+        // cursor from mose position for now. later maybe add controller option.
+        cursorPosition = playerCamera.ScreenToWorldPoint(Input.mousePosition);
+
+        // only care about the button press
+        if (Input.GetButtonDown("Jump")) {
+            jump = true;
+        }
+
+        // holdable input
+        if (Input.GetButtonDown("Fire1")) {
+            hang = true;
+        } else if (Input.GetButtonUp("Fire1")) {
+            hang = false;
+        }
     }
 
-    void Update()
+    void FixedUpdate ()
     {
-        Vector2 directionalInput = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
-        player.SetDirectionalInput(directionalInput);
-
-        //Jumping
-        if (Input.GetKeyDown(KeyCode.W))
-        {
-            player.OnJumpInputDown();
-        }
-        if (Input.GetKeyUp(KeyCode.W))
-        {
-            player.OnJumpInputUp();
-        }
-
-        // Shooting/grapple
-        if (Input.GetMouseButtonDown(0))
-        {
-            player.OnMouseButtonDown();
-        }
+        // Move our character, multiplied by the time differnt between frames, so movement is the same regardles off your computer's fps.
+        controller.Move(directionalInput * Time.fixedDeltaTime, cursorPosition, jump, hang);
+        // reset the jump
+        jump = false;
     }
 }

@@ -5,8 +5,8 @@ using System.Collections;
 public class CameraFollow : MonoBehaviour
 {
 
-    public Camera thisCamera;
-    public Controller2D target;
+    private Camera thisCamera;
+    public CharacterController2D target;
     private Collider2D thisCollider;
     public float verticalOffset;
     public Vector2 focusAreaSize;
@@ -17,9 +17,9 @@ public class CameraFollow : MonoBehaviour
     [Range(0.01f, 4f)]
     public float focusShiftIntensity = 1f;
 
-    //Paralax Vars
-    public GameObject BGParentObject;
-    public GameObject bulletParentObject;
+    //Paralax Vars, commented out for now because we're not there yet and this was causing errors -BWM
+    //public GameObject BGParentObject;
+    //public GameObject bulletParentObject;
     [Range(0, 1)]
     public float BackgroundSpeed;
 
@@ -56,8 +56,8 @@ public class CameraFollow : MonoBehaviour
 
         //Parallax Scrolling
         cameraFocusPoint = new Vector3(transform.position.x * BackgroundSpeed, transform.position.y * BackgroundSpeed, 0.0f);
-        BGParentObject.transform.position = cameraFocusPoint;
-        bulletParentObject.transform.position = cameraFocusPoint;
+        //BGParentObject.transform.position = cameraFocusPoint;
+        //bulletParentObject.transform.position = cameraFocusPoint;
     }
 
     void OnDrawGizmos()
