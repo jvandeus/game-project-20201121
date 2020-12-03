@@ -222,10 +222,12 @@ MonoBehaviour:
   target: {fileID: 1806914272}
   verticalOffset: 0
   focusAreaSize: {x: 10, y: 10}
+  followStiffness: 0.9
   focusShiftDeadzone: 0.5
   focusShiftAnchor: 0.4
   focusShiftIntensity: 0.5
-  BackgroundSpeed: 0
+  cameraDistance: 10
+  updatesPerSecond: 0
 --- !u!1 &220576979
 GameObject:
   m_ObjectHideFlags: 0

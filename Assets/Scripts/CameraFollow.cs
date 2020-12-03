@@ -11,64 +11,123 @@ public class CameraFollow : MonoBehaviour
     public float verticalOffset;
     public Vector2 focusAreaSize;
     [Range(0.01f, 1f)]
+    public float followStiffness = 0.4f;
+    [Range(0.01f, 1f)]
     public float focusShiftDeadzone = 0.5f;
     [Range(0.01f, 1f)]
     public float focusShiftAnchor = 0.4f;
     [Range(0.01f, 4f)]
     public float focusShiftIntensity = 1f;
+    public float cameraDistance = 10f;
+    [Range(0.0f, 60f)]
+    public float updatesPerSecond = 0f;
+
+    // a bool to keep track of whether or not we have to keep updating position
+    private bool isSnapped = false;
+    // keep a copy of the executing follow script
+    private IEnumerator followCoroutine;
+    // the main focus object
+    private FocusArea focusArea;
 
     //Paralax Vars, commented out for now because we're not there yet and this was causing errors -BWM
     //public GameObject BGParentObject;
     //public GameObject bulletParentObject;
-    [Range(0, 1)]
-    public float BackgroundSpeed;
 
-    FocusArea focusArea;
+    // [Range(0, 1)]
+    // public float BackgroundSpeed;
 
     void Awake()
     {
+        // make sure the camera is negative.
+        cameraDistance = - Mathf.Abs(cameraDistance);
+        // initialize the bool checks
+        isSnapped = false;
+        // get the needed components
         thisCamera = GetComponent<Camera>();
         thisCollider = target.GetComponent<Collider2D>();
+        // construct the area that will control our camera movements
+        focusArea = new FocusArea(thisCollider.bounds, focusAreaSize, focusShiftDeadzone, focusShiftAnchor, focusShiftIntensity, thisCamera);
+        // set up the coroutine to follow the target
+        followCoroutine = followTarget();
+        // stop any running coroutine
+        if (followCoroutine != null) {
+            StopCoroutine(followCoroutine);
+        }
+        // start the coroutine to follow the target
+        StartCoroutine(followCoroutine);
     }
 
     void Start()
     {
-        focusArea = new FocusArea(thisCollider.bounds, focusAreaSize, focusShiftDeadzone, focusShiftAnchor, focusShiftIntensity, thisCamera);
-        transform.position = new Vector3(thisCollider.bounds.center.x, thisCollider.bounds.center.y, -10f);
+        // initialize the camera to the center of the area, at the proper distance away from the 2d plane.
+        transform.position = new Vector3(thisCollider.bounds.center.x, thisCollider.bounds.center.y, cameraDistance);
     }
 
-    void LateUpdate()
+    // coroutine to folow the target. this is to replace update calls, but may need to test efficiency at some point.
+    IEnumerator followTarget()
     {
-        focusArea.Update(thisCollider.bounds);
-
-        // focus point in the focus area is on the same z plane as the target, so we can calculate distances properly.
-        Vector3 cameraFocusPoint = (focusArea.focusPoint + Vector3.up * verticalOffset);
-        Vector3 positionToFocus = cameraFocusPoint - transform.position;
+        Vector3 cameraFocusPoint = new Vector3();
+        Vector3 positionToFocus = new Vector3();
+        Vector3 targetPosition = new Vector3();
         float snapDistance = 0.2f;
+        float timer = 0f;
+        float tickTime = updatesPerSecond > 0f ? 1/updatesPerSecond : 0f;
+        bool isStarted = false;
 
-        // smoothly travel toward target position if we are not already there.
-        if (positionToFocus.magnitude > snapDistance) {
-            // Set the Camera to 10 units away from 0 in the z axis, which should be the background layer
-            transform.position = Vector3.Lerp(transform.position, new Vector3(cameraFocusPoint.x, cameraFocusPoint.y, -10f) , 0.4f);
-        } else {
-            transform.position = new Vector3(cameraFocusPoint.x, cameraFocusPoint.y, -10f);
+        while (enabled) {
+            // increment the timer
+            timer += Time.deltaTime;
+            // check if we need to update the target
+            if (!isStarted || timer >= tickTime) {
+                isStarted = true;
+                // recalcualte the position the camera should aim for
+                focusArea.updatePosition(thisCollider.bounds);
+                // the focus point in the focus area is on the same z plane as the target, so we can calculate distances properly.
+                cameraFocusPoint = (focusArea.focusPoint + Vector3.up * verticalOffset);
+                // get the ray from the camera's current focus position to the point it should be focused on
+                positionToFocus = cameraFocusPoint - transform.position;
+                // set the new target position, at the appropriate distance away from the focus
+                targetPosition = cameraFocusPoint;
+                targetPosition.z = cameraDistance;
+                // reset the timer
+                timer = 0f;
+            }
+
+            // smoothly travel toward target position if we are not already there.
+            if (positionToFocus.magnitude > snapDistance) {
+                isSnapped = false;
+                // Set the Camera to 10 units away from 0 in the z axis, which should be the background layer
+                transform.position = Vector3.Lerp(transform.position, targetPosition, followStiffness);
+            } else {
+                if (isSnapped == false) {
+                    isSnapped = true;
+                    // snap to the focus point if we are close enough.
+                    transform.position = targetPosition;
+                }
+            }
+
+            //Parallax Scrolling
+            // cameraFocusPoint = new Vector3(transform.position.x * BackgroundSpeed, transform.position.y * BackgroundSpeed, 0.0f);
+            //BGParentObject.transform.position = cameraFocusPoint;
+            //bulletParentObject.transform.position = cameraFocusPoint;
+            
+            // wait for next frame
+            yield return null;
         }
-
-        //Parallax Scrolling
-        cameraFocusPoint = new Vector3(transform.position.x * BackgroundSpeed, transform.position.y * BackgroundSpeed, 0.0f);
-        //BGParentObject.transform.position = cameraFocusPoint;
-        //bulletParentObject.transform.position = cameraFocusPoint;
     }
 
     void OnDrawGizmos()
     {
         if (enabled) {
+            // show the area the camera can be shifted in
             Gizmos.color = new Color(0, 0, 1, .5f);
             Gizmos.DrawCube(focusArea.center, focusAreaSize);
+            // show the deadzone
             Gizmos.color = new Color(1, 0, 0, .5f);
             Gizmos.DrawCube(focusArea.center, focusAreaSize*focusShiftDeadzone);
+            // show the focus point
             Gizmos.color = new Color(0, 1, 0, .5f);
-            Gizmos.DrawCube(focusArea.focusPoint, new Vector2(0.2f, 0.2f));
+            Gizmos.DrawCube(focusArea.focusPoint, new Vector2(0.4f, 0.4f));
         }
     }
 
@@ -130,7 +189,7 @@ public class CameraFollow : MonoBehaviour
         }
 
         //Velocity is added here, at shiftX. Add the mouse calculations to shiftX?
-        public void Update(Bounds targetBounds)
+        public void updatePosition(Bounds targetBounds)
         {
             focusTriggerPoint = calcFocusPoint(targetBounds);
 
