@@ -627,7 +627,7 @@ MonoBehaviour:
   m_AirControl: 1
   m_WhatIsGround:
     serializedVersion: 2
-    m_Bits: 55
+    m_Bits: 567
   m_WhatCanBeGrappled:
     serializedVersion: 2
     m_Bits: 512
