@@ -12,7 +12,8 @@ public class CharacterController2D : MonoBehaviour
 	[Range(0, .3f)] [SerializeField] private float m_MovementSmoothing = .05f;	// How much to smooth out the movement
 	[SerializeField] private bool m_AirControl = false;							// Whether or not a player can steer while jumping;
 	[SerializeField] private LayerMask m_WhatIsGround;							// A mask determining what is ground to the character
-	[SerializeField] private LayerMask m_WhatCanBeGrappled;					    // A mask determining what can be grabbed by the character
+	[SerializeField] private LayerMask m_WhatCanBeGrappled;					    // A mask determining what can be grabbed via Raycast to Cursor
+	[SerializeField] private LayerMask m_grappleAreas;					    	// A mask determining what can be grabbed via Cursor position
 	[SerializeField] public float m_maxGrappleDistance;							// Max distance the grapple can reach
 
 	// just for temporary visuals
@@ -210,8 +211,9 @@ public class CharacterController2D : MonoBehaviour
     {
     	// cast a ray from player position to the target
     	Vector2 rayDirection = target - (Vector2)transform.position;
-    	Vector2 lineEnd;
+    	Vector2 lineEnd = transform.position;
     	bool is_valid;
+    	float grappleRadius = 0.2f;
     	float timer = 0f;
     	float timeOut = 0.5f; // for when the grapple misses, only show the line for a short time
 
@@ -220,17 +222,25 @@ public class CharacterController2D : MonoBehaviour
 
     	RaycastHit2D hitInfo = Physics2D.Raycast(transform.position, rayDirection, m_maxGrappleDistance, m_WhatCanBeGrappled);
 
-    	// if we have a hit...
+    	// check for raycast hit
     	if (hitInfo.collider != null) {
     		is_valid = true;
     		// set the line end to the point
     		lineEnd = hitInfo.point;
-			// start the hang
-			HangStart(hitInfo.point);
 		} else {
 			is_valid = false;
 			// no hit, set the line render to connect to the target, or the max distance it CAN traval.
 			lineEnd = transform.position + Vector3.ClampMagnitude(rayDirection, m_maxGrappleDistance);
+		}
+		// check for background layer hit
+		Collider2D hitCollider = Physics2D.OverlapCircle(target, grappleRadius, m_grappleAreas);
+		if (hitCollider != null) {
+			is_valid = true;
+		}
+		// if we have a hit...
+		if (is_valid) {
+			// start the hang
+			HangStart(lineEnd);
 		}
 		grappleLine.enabled = true;
 
