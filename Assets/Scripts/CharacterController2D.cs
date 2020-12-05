@@ -12,20 +12,24 @@ public class CharacterController2D : MonoBehaviour
 	[Range(0, .3f)] [SerializeField] private float m_MovementSmoothing = .05f;	// How much to smooth out the movement
 	[SerializeField] private bool m_AirControl = false;							// Whether or not a player can steer while jumping;
 	[SerializeField] private LayerMask m_WhatIsGround;							// A mask determining what is ground to the character
-	[SerializeField] private LayerMask m_WhatCanBeGrappled;					    // A mask determining what can be grabbed by the character
+	[SerializeField] private LayerMask m_WhatCanBeGrappled;					    // A mask determining what can be grabbed via Raycast to Cursor
+	[SerializeField] private LayerMask m_grappleAreas;					    	// A mask determining what can be grabbed via Cursor position
 	[SerializeField] public float m_maxGrappleDistance;							// Max distance the grapple can reach
-	[SerializeField] private Transform m_GroundCheck;							// A position marking where to check if the player is grounded.
-	[SerializeField] private Transform m_CeilingCheck;							// A position marking where to check for ceilings
 
 	// just for temporary visuals
 	public LineRenderer grappleLine;
 
-	const float k_GroundedRadius = .2f; // Radius of the overlap circle to determine if grounded
-	private bool m_Grounded;            // Whether or not the player is grounded.
-	const float k_CeilingRadius = .2f; // Radius of the overlap circle to determine if the player is touching a ceiling
-	private Rigidbody2D m_Rigidbody2D;
+	// for storing collision checks of this character (struct definition at the bottom)
+	public CollisionInfo isTouching = new CollisionInfo();
+	private Collider2D characterCollider;
+	private Rigidbody2D characterRigidbody;
+	public float touchCheckSize = 0.1f;
+	private static readonly Vector2[] touchDirections = new [] { Vector2.up, Vector2.right, Vector2.down, Vector2.left };
+
+	// TODO: rework flip logic and move it to the the collision struct
 	private bool m_FacingRight = true;  // For determining which way the player is currently facing.
-	private Vector3 m_Velocity = Vector3.zero;
+
+	// private Vector3 m_Velocity = Vector3.zero;
 
 	[Header("Events")]
 	[Space]
@@ -48,7 +52,8 @@ public class CharacterController2D : MonoBehaviour
 
 	private void Awake()
 	{
-		m_Rigidbody2D = GetComponent<Rigidbody2D>();
+		characterRigidbody = GetComponent<Rigidbody2D>();
+		characterCollider = GetComponent<Collider2D>();
 		// try to grab it from components on this object.
 		if (!characterHanger) {
 			characterHanger = GetComponent<HingeJoint2D>();
@@ -71,23 +76,28 @@ public class CharacterController2D : MonoBehaviour
 
 	private void FixedUpdate()
 	{
-		bool wasGrounded = m_Grounded;
-		m_Grounded = false;
-
-		// The player is grounded if a circlecast to the groundcheck position hits anything designated as ground
-		// This can be done using layers instead but Sample Assets will not overwrite your project settings.
-		Collider2D[] colliders = Physics2D.OverlapCircleAll(m_GroundCheck.position, k_GroundedRadius, m_WhatIsGround);
-		for (int i = 0; i < colliders.Length; i++)
-		{
-			// as long as the collision object is not THIS object, then we can proceed
-			if (colliders[i].gameObject != gameObject)
-			{
-				m_Grounded = true;
-				if (!wasGrounded)
-					OnLandEvent.Invoke();
-			}
-		}
+		updateTouching();
 	}
+
+	//Draw the BoxCast as a gizmo to show where it currently is testing. Click the Gizmos button to see this
+    void OnDrawGizmos()
+    {
+    	Vector3 target = characterCollider ? characterCollider.bounds.center : transform.position;
+    	Vector3 size = characterCollider ? characterCollider.bounds.size : transform.localScale;
+        // loop through all directions we check for want to check for what it is touching.
+		for (int i = 0; i < touchDirections.Length; i++) {
+			//Check if there has been a hit yet
+	        if (isTouching[i]) {
+	        	Gizmos.color = Color.green;
+	        } else {
+	        	Gizmos.color = Color.red;
+	        }
+			//Draw a Ray forward from GameObject toward the maximum distance
+	        Gizmos.DrawRay(target, (Vector3)touchDirections[i] * touchCheckSize);
+	        //Draw a cube at the maximum distance
+	        Gizmos.DrawWireCube(target + (Vector3)touchDirections[i] * touchCheckSize, size);
+		} 
+    }
 
 	private void Flip()
 	{
@@ -107,7 +117,7 @@ public class CharacterController2D : MonoBehaviour
 		// if (Physics2D.OverlapCircle(m_CeilingCheck.position, k_CeilingRadius, m_WhatIsGround)) { // ... do something }
 
 		//only control the player if grounded or airControl is turned on
-		if (m_Grounded || m_AirControl)
+		if (isTouching.down || m_AirControl)
 		{
 			// Update the hanging states and event based on the input.
 			if (hang) {
@@ -123,12 +133,12 @@ public class CharacterController2D : MonoBehaviour
 			}
 
 			// Move the character by finding the target velocity
-			//Vector3 targetVelocity = new Vector2(move.x * 10f, m_Rigidbody2D.velocity.y);
+			//Vector3 targetVelocity = new Vector2(move.x * 10f, characterRigidbody.velocity.y);
 			// And then smoothing it out and applying it to the character
-			// m_Rigidbody2D.velocity = Vector3.SmoothDamp(m_Rigidbody2D.velocity, targetVelocity, ref m_Velocity, m_MovementSmoothing);
+			// characterRigidbody.velocity = Vector3.SmoothDamp(characterRigidbody.velocity, targetVelocity, ref m_Velocity, m_MovementSmoothing);
 
 			// move the character with physics forces
-			m_Rigidbody2D.AddForce(move); //, ForceMode2D.Impulse);
+			characterRigidbody.AddForce(move); //, ForceMode2D.Impulse);
 
 			// // If the input is moving the player right and the player is facing left...
 			// if (move.x > 0 && !m_FacingRight)
@@ -144,11 +154,11 @@ public class CharacterController2D : MonoBehaviour
 			// }
 		}
 		// If the player should jump...
-		if (m_Grounded && jump)
+		if (isTouching.down && jump)
 		{
 			// Add a vertical force to the player.
-			m_Grounded = false;
-			m_Rigidbody2D.AddForce(new Vector2(0f, m_JumpForce));
+			isTouching.down = false;
+			characterRigidbody.AddForce(new Vector2(0f, m_JumpForce));
 		}
 	}
 
@@ -179,14 +189,35 @@ public class CharacterController2D : MonoBehaviour
 	    }
 	}
 
+	public void updateTouching()
+	{
+		bool wasGrounded = isTouching.down;
+		RaycastHit2D hitResult;
+		// loop through all directions we check for want to check for what it is touching.
+		for(int i = 0; i < touchDirections.Length; i++) {
+			hitResult = Physics2D.BoxCast(characterCollider.bounds.center, characterCollider.bounds.size, 0f, touchDirections[i], touchCheckSize, m_WhatIsGround);
+			// as long as the collision object is not THIS object, then we can proceed
+			if (hitResult.collider != null) {
+				// Debug.Log(i + ' ' + hitResult.collider.name);
+				isTouching[i] = true;
+				if (!wasGrounded && i == (int)CharacterController2D.CollisionInfo.TouchDirection.down) {
+					OnLandEvent.Invoke();
+				}
+			} else {
+				isTouching[i] = false;
+			}
+		} 
+	}
+
 
 	// using coroutines (to avoid a lot of update calls), attempt to grapple to the given point.
     IEnumerator grappleToPoint (Vector2 target)
     {
     	// cast a ray from player position to the target
     	Vector2 rayDirection = target - (Vector2)transform.position;
-    	Vector2 lineEnd;
+    	Vector2 lineEnd = transform.position;
     	bool is_valid;
+    	float grappleRadius = 0.2f;
     	float timer = 0f;
     	float timeOut = 0.5f; // for when the grapple misses, only show the line for a short time
 
@@ -195,17 +226,25 @@ public class CharacterController2D : MonoBehaviour
 
     	RaycastHit2D hitInfo = Physics2D.Raycast(transform.position, rayDirection, m_maxGrappleDistance, m_WhatCanBeGrappled);
 
-    	// if we have a hit...
+    	// check for raycast hit
     	if (hitInfo.collider != null) {
     		is_valid = true;
     		// set the line end to the point
     		lineEnd = hitInfo.point;
-			// start the hang
-			HangStart(hitInfo.point);
 		} else {
 			is_valid = false;
 			// no hit, set the line render to connect to the target, or the max distance it CAN traval.
 			lineEnd = transform.position + Vector3.ClampMagnitude(rayDirection, m_maxGrappleDistance);
+		}
+		// check for background layer hit
+		Collider2D hitCollider = Physics2D.OverlapCircle(target, grappleRadius, m_grappleAreas);
+		if (hitCollider != null) {
+			is_valid = true;
+		}
+		// if we have a hit...
+		if (is_valid) {
+			// start the hang
+			HangStart(lineEnd);
 		}
 		grappleLine.enabled = true;
 
@@ -227,4 +266,52 @@ public class CharacterController2D : MonoBehaviour
         // end the grapple and finish this coroutine
         HangEnd();
     }
+
+    // struct (sorta like a class, but these are passed by value instead of reference)
+    
+    // NOTE: source logic:
+    // https://stackoverflow.com/questions/52158432/how-to-iterate-through-a-structs-fields
+    // this is to create an iterable storage for collision info in a more organized way.
+    public struct CollisionInfo
+    {
+	    public enum TouchDirection { up, right, down, left }
+
+	    public static bool[] touchList = { false, false, false, false };
+
+	    public bool up {
+	        get { return this[0]; }
+	        set { this[0] = value; }
+	    }
+
+	    public bool right {
+	        get { return this[1]; }
+	        set { this[1] = value; }
+	    }
+
+	    public bool down {
+	        get { return this[2]; }
+	        set { this[2] = value; }
+	    }
+
+	    public bool left {
+	        get { return this[3]; }
+	        set { this[3] = value; }
+	    }	    
+
+	    public bool this[TouchDirection dirn] {
+	        get { return this[(int)dirn]; }
+	        set { this[(int)dirn] = value; }
+	    }
+
+	    public bool this[int dirn] {
+	        get { return touchList[dirn]; }
+	        set { touchList[dirn] = value; }
+	    }
+
+	    public bool any {
+	        get { return this.up || this.right || this.down || this.left; }
+	        // set does nothing
+	        set {}
+	    }
+	}
 }
