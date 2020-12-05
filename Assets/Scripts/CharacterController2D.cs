@@ -42,7 +42,7 @@ public class CharacterController2D : MonoBehaviour
 	private GameObject currentGrapple;
 	public GameObject characterGrappleHook;
 
-	public float anchorR; // Length of hingeJoint2D / Rope.  Set in inspector in Unity
+	//public float anchorR; // Length of hingeJoint2D / Rope.  Set in inspector in Unity
    
     /// </summary>
 
