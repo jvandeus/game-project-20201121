@@ -16,6 +16,8 @@ public class CharacterController2D : MonoBehaviour
 	[SerializeField] private LayerMask m_grappleAreas;					    	// A mask determining what can be grabbed via Cursor position
 	[SerializeField] public float m_maxGrappleDistance;							// Max distance the grapple can reach
 
+	
+
 	// just for temporary visuals
 	public LineRenderer grappleLine;
 
