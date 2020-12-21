@@ -179,6 +179,22 @@ public class CharacterController2D : MonoBehaviour
         currentGrapple = Instantiate(characterGrappleHook, targetWorldPoint, Quaternion.identity);
 	}
 
+	private void HangStart(Vector2 targetWorldPoint, Rigidbody2D hangerConnectedRB2D)
+	{
+		// Enable HingeJoint2D component on player
+		characterHanger.enabled = true;
+		// trigger the event
+		OnHangEvent.Invoke(true);
+
+		// vector 3 just gets implicitly converted to vector 2 here, so it will comply with the anchor fine.
+		Vector2 desiredAnchorLocal = transform.InverseTransformPoint(targetWorldPoint); //transform from world to local
+		characterHanger.connectedBody = hangerConnectedRB2D; //So that hingePoint will move if object it is attached to is moving
+		characterHanger.anchor = desiredAnchorLocal;
+
+		//For creating a sprite for the hook.  Rope between hook and player will come later
+		currentGrapple = Instantiate(characterGrappleHook, targetWorldPoint, Quaternion.identity);
+	}
+
 	private void HangEnd()
 	{
 		// Disable HingeJoint2D component on player
@@ -218,21 +234,28 @@ public class CharacterController2D : MonoBehaviour
     	// cast a ray from player position to the target
     	Vector2 rayDirection = target - (Vector2)transform.position;
     	Vector2 lineEnd = transform.position;
+		Vector2 lineEndLocal = transform.position;
     	bool is_valid;
     	float grappleRadius = 0.2f;
     	float timer = 0f;
     	float timeOut = 0.5f; // for when the grapple misses, only show the line for a short time
 
+		Vector2 hitObjectOffset = new Vector2(0,0);
+
     	// Just trying to see the direction im trowing the raycast in...
     	Debug.DrawRay(transform.position, rayDirection, Color.green, 0);
 
     	RaycastHit2D hitInfo = Physics2D.Raycast(transform.position, rayDirection, m_maxGrappleDistance, m_WhatCanBeGrappled);
+		Rigidbody2D connectedHangerRB2D = null;
 
     	// check for raycast hit
     	if (hitInfo.collider != null) {
     		is_valid = true;
     		// set the line end to the point
     		lineEnd = hitInfo.point;
+			connectedHangerRB2D = hitInfo.rigidbody;
+			hitObjectOffset = connectedHangerRB2D.GetPoint(hitInfo.point);
+			lineEndLocal = lineEnd; //This seems to work, so just carrying it forward for now
 		} else {
 			is_valid = false;
 			// no hit, set the line render to connect to the target, or the max distance it CAN traval.
@@ -242,11 +265,28 @@ public class CharacterController2D : MonoBehaviour
 		Collider2D hitCollider = Physics2D.OverlapCircle(target, grappleRadius, m_grappleAreas);
 		if (hitCollider != null) {
 			is_valid = true;
+			connectedHangerRB2D = hitCollider.attachedRigidbody; //This seems to always put the line and hook sprite near world origin
+			//So this rigidbody the above line is grabbings seems to be for...the entire background layer, not just the one tile we're hitting on it.
+			//The line below makes the entire background reposition on the player's hook...which is NOT what I want, but is hilarious
+			//connectedHangerRB2D.transform.position = lineEnd;
+			hitObjectOffset = connectedHangerRB2D.GetPoint(hitInfo.point);
+			
+
+			
+
 		}
 		// if we have a hit...
 		if (is_valid) {
 			// start the hang
-			HangStart(lineEnd);
+			//HangStart(lineEnd);
+			if (connectedHangerRB2D == null)
+			{
+				HangStart(lineEnd);
+			}
+			else
+			{
+				HangStart(lineEnd, connectedHangerRB2D); //Both Raycast and BG hit seem to se the hingejoint correctly, just not the sprites
+			}
 		}
 		grappleLine.enabled = true;
 
@@ -259,9 +299,19 @@ public class CharacterController2D : MonoBehaviour
 	        }
         	// update the line renderer
         	grappleLine.SetPosition(0, transform.position);
-			grappleLine.SetPosition(1, lineEnd);
+			//grappleLine.SetPosition(1, lineEnd);
+			
+			if (connectedHangerRB2D == null)
+			{
+				grappleLine.SetPosition(1, lineEnd);
+			}
+			else
+			{
+				grappleLine.SetPosition(1, connectedHangerRB2D.position + hitObjectOffset); //This works for the Raycast hit case, not for the hit BG case
+				currentGrapple.transform.position = connectedHangerRB2D.position + hitObjectOffset;
+			}
 			// wait for next frame
-            yield return null;
+			yield return null;
         }
         // disable the line renderer
         grappleLine.enabled = false;
