@@ -269,7 +269,9 @@ public class CharacterController2D : MonoBehaviour
 			//So this rigidbody the above line is grabbings seems to be for...the entire background layer, not just the one tile we're hitting on it.
 			//The line below makes the entire background reposition on the player's hook...which is NOT what I want, but is hilarious
 			//connectedHangerRB2D.transform.position = lineEnd;
-			hitObjectOffset = connectedHangerRB2D.GetPoint(hitInfo.point);
+
+			//new attempt
+			hitObjectOffset = lineEnd;  //This seems to have fixed it.
 			
 
 			
