@@ -46,11 +46,15 @@ public class CharacterController2D : MonoBehaviour
 	// private bool m_isHanging = false; // idk if we need this?
 	private bool m_wasHangHeld = false;
 	private GameObject currentGrapple;
-	public GameObject characterGrappleHook;
+	public GameObject characterGrappleHook;  
 
 	//public float anchorR; // Length of hingeJoint2D / Rope.  Set in inspector in Unity
-   
-    /// </summary>
+
+
+	//Respawn stuff
+	public GameObject activeCheckpoint; //Default set publicly, updated on contact with others
+
+	/// </summary>
 
 	private void Awake()
 	{
@@ -74,14 +78,30 @@ public class CharacterController2D : MonoBehaviour
 			OnHangEvent = new BoolEvent();
 
 		grappleLine.enabled = false;
+
+		//
 	}
 
-	private void FixedUpdate()
+    private void Start()
+    {
+		activeCheckpoint.GetComponent<CheckpointHandler>().setAsPlayerActiveCheckpoint();
+	}
+
+    private void FixedUpdate()
 	{
 		updateTouching();
 	}
 
-	//Draw the BoxCast as a gizmo to show where it currently is testing. Click the Gizmos button to see this
+    //Respawn and Damage taking, may need to be integrated with CharacterStats later.
+    //The Trigger events are in the Other objects, and they call methods within this characterController
+    private void setActiveCheckpoint(GameObject checkpointObjectIn)
+    {
+		
+    }
+
+
+
+    //Draw the BoxCast as a gizmo to show where it currently is testing. Click the Gizmos button to see this
     void OnDrawGizmos()
     {
     	Vector3 target = characterCollider ? characterCollider.bounds.center : transform.position;
@@ -311,6 +331,7 @@ public class CharacterController2D : MonoBehaviour
 			{
 				grappleLine.SetPosition(1, connectedHangerRB2D.position + hitObjectOffset); //This works for the Raycast hit case, not for the hit BG case
 				currentGrapple.transform.position = connectedHangerRB2D.position + hitObjectOffset;
+				
 			}
 			// wait for next frame
 			yield return null;
