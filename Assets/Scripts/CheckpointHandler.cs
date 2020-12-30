@@ -33,12 +33,25 @@ public class CheckpointHandler : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D otherCollider)
     {
-        //make sure it's a player?
+        //Since only a player will have a CharacterController2D component, then
+        //This basically makes sure the trigger is caused by a player.
+        //Could also turn off some layers for this collider to eliminate some
+        //of the problem
         if (otherCollider.GetComponent<CharacterController2D>() != null)
         {
-            Debug.Log("Collision Worked");
-            //CharacterController2D playerController = otherCollider.GetComponent<CharacterController2D>();
-            //playerController.activeCheckpoint;
+            //Debug.Log("Collision Worked");
+
+            //First, we need to grab the player's CharacterController2D component
+            CharacterController2D playerController = otherCollider.GetComponent<CharacterController2D>();
+
+            //Next, we need to tell the old checkpoint it's not longer the current checkpoint
+            playerController.activeCheckpoint.GetComponent<CheckpointHandler>().setAsInctiveCheckpoint();
+
+            //Okay, now it's time to tell the player that it has a new checkpoint
+            playerController.activeCheckpoint = this.gameObject;
+            
+            //Finally, tell this checkpoint it's the current checkpoint
+            setAsPlayerActiveCheckpoint();
         }
 
     }

@@ -9,7 +9,7 @@ using UnityEngine.Events;
 public class CharacterController2D : MonoBehaviour
 {
 	[SerializeField] private float m_JumpForce = 400f;							// Amount of force added when the player jumps.
-	[Range(0, .3f)] [SerializeField] private float m_MovementSmoothing = .05f;	// How much to smooth out the movement
+	//[Range(0, .3f)] [SerializeField] private float m_MovementSmoothing = .05f;	// How much to smooth out the movement
 	[SerializeField] private bool m_AirControl = false;							// Whether or not a player can steer while jumping;
 	[SerializeField] private LayerMask m_WhatIsGround;							// A mask determining what is ground to the character
 	[SerializeField] private LayerMask m_WhatCanBeGrappled;					    // A mask determining what can be grabbed via Raycast to Cursor
@@ -53,6 +53,7 @@ public class CharacterController2D : MonoBehaviour
 
 	//Respawn stuff
 	public GameObject activeCheckpoint; //Default set publicly, updated on contact with others
+	private bool isDead = false;
 
 	/// </summary>
 
@@ -84,21 +85,39 @@ public class CharacterController2D : MonoBehaviour
 
     private void Start()
     {
+		//This is here ebcause I had errors in Awake....but they might have been unrelated
+		//Could probably try to move this back to awake at some point
 		activeCheckpoint.GetComponent<CheckpointHandler>().setAsPlayerActiveCheckpoint();
 	}
+
+	public void respawnPlayer()
+    {
+		transform.position = activeCheckpoint.transform.position;
+		characterRigidbody.velocity = new Vector2(0, 0);
+		characterRigidbody.angularVelocity = 0;
+		isDead = false;
+		
+
+	}
+
+	public void killPlayer()
+    {
+		//Eventually, there might be more going on in here than just respawn....like an animation or something
+		//but for now, just this.
+		isDead = true;
+		HangEnd();  
+		respawnPlayer();
+
+		//We may also want a damagePlayer method...but that definitly seems more in the realm of belonging in the
+		//stats class, so I'm omiting it for now.
+    }
+
+	
 
     private void FixedUpdate()
 	{
 		updateTouching();
 	}
-
-    //Respawn and Damage taking, may need to be integrated with CharacterStats later.
-    //The Trigger events are in the Other objects, and they call methods within this characterController
-    private void setActiveCheckpoint(GameObject checkpointObjectIn)
-    {
-		
-    }
-
 
 
     //Draw the BoxCast as a gizmo to show where it currently is testing. Click the Gizmos button to see this
@@ -313,7 +332,9 @@ public class CharacterController2D : MonoBehaviour
 		grappleLine.enabled = true;
 
 		// while the grapple holds, show the line
-        while(m_wasHangHeld && timer < timeOut) {
+		//Also, while we're not dead.  Not sure if this boolean will always get caught, 
+		//Just adding this isDead boolean isn't enough, needs something else
+        while((m_wasHangHeld && timer < timeOut) && !isDead) {
         	// if the grapple was a miss...
         	if (!is_valid) {
 	        	// increment the timer
