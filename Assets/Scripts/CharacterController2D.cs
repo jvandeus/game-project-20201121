@@ -55,10 +55,18 @@ public class CharacterController2D : MonoBehaviour
 	public GameObject activeCheckpoint; //Default set publicly, updated on contact with others
 	private bool isDead = false;
 
+
+
 	/// </summary>
 
 	private void Awake()
 	{
+		//I may want to move these components to children, 
+		//Right now, my plan would be to make a public variable for the default form, 
+		//and use that to see all these component variables in Awake
+
+		//Then, I'll have to reset all of these variables when morphing occurs
+
 		characterRigidbody = GetComponent<Rigidbody2D>();
 		characterCollider = GetComponent<Collider2D>();
 		// try to grab it from components on this object.
@@ -118,6 +126,8 @@ public class CharacterController2D : MonoBehaviour
 	{
 		updateTouching();
 	}
+
+   
 
 
     //Draw the BoxCast as a gizmo to show where it currently is testing. Click the Gizmos button to see this
